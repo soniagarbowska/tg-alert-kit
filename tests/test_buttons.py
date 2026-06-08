@@ -1,98 +1,86 @@
 # -*- coding: utf-8 -*-
-"""Testy dynamicznych przycisków."""
-import pytest
+"""Testy przyciskow-komend."""
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from tg_alert_kit.buttons import build_buttons, describe_callback
+from tg_alert_kit.buttons import build_buttons, parse_command
 
 
 class TestBuildButtons:
-    def test_returns_list_of_rows(self):
-        rows = build_buttons("sec", "M00042", "warn")
-        assert isinstance(rows, list)
-        assert len(rows) >= 1
-        for row in rows:
-            assert isinstance(row, list)
+    def test_returns_rows(self):
+        rows = build_buttons("bezpieczenstwo", "M00099")
+        assert isinstance(rows, list) and len(rows) >= 1
 
-    def test_each_button_has_required_keys(self):
-        rows = build_buttons("mail", "M00001", "info")
+    def test_every_button_is_command(self):
+        rows = build_buttons("bezpieczenstwo", "M00099")
         for row in rows:
             for btn in row:
-                assert "label" in btn
-                assert "action" in btn
-                assert btn["action"]["type"] == "callback"
-                assert "value" in btn["action"]
+                assert btn["action"]["type"] == "command"
+                assert btn["action"]["command"].startswith("/alert_")
 
-    def test_alert_id_substituted(self):
-        rows = build_buttons("sec", "M00042", "warn")
-        all_values = [btn["action"]["value"] for row in rows for btn in row]
-        # każdy callback value musi zawierać M00042 albo być gate_status
-        for v in all_values:
-            assert "M00042" in v or v == "gate_status"
-
-    def test_no_curly_braces_in_values(self):
-        rows = build_buttons("mail", "M00099", "critical")
+    def test_alert_id_in_command(self):
+        rows = build_buttons("mail", "M00042")
         for row in rows:
             for btn in row:
-                assert "{id}" not in btn["action"]["value"]
+                assert "M00042" in btn["action"]["command"]
 
-    def test_escalate_only_for_critical(self):
-        rows_warn = build_buttons("sec", "M00001", "warn")
-        rows_crit = build_buttons("sec", "M00001", "critical")
-        labels_warn = [btn["label"] for row in rows_warn for btn in row]
-        labels_crit = [btn["label"] for row in rows_crit for btn in row]
-        # eskaluj NIE pojawia sie dla warn
-        assert not any("Eskaluj" in l for l in labels_warn)
-        # eskaluj POJAWIA sie dla critical
-        assert any("Eskaluj" in l for l in labels_crit)
+    def test_labels_are_polish_no_ack(self):
+        rows = build_buttons("bezpieczenstwo", "M00099")
+        labels = [b["label"] for r in rows for b in r]
+        # zero ACK / angielskiego zargonu
+        for l in labels:
+            assert "ack" not in l.lower()
+            assert "acknowledge" not in l.lower()
 
-    def test_unknown_monitor_uses_default(self):
-        rows = build_buttons("nieznany_monitor", "M00001", "info")
+    def test_najem_has_victor_not_pawel(self):
+        rows = build_buttons("najem", "M00001")
+        cmds = [b["action"]["command"] for r in rows for b in r]
+        assert any("victor" in c for c in cmds)
+        assert not any("pawel" in c for c in cmds)
+
+    def test_sec_has_pawel(self):
+        rows = build_buttons("bezpieczenstwo", "M00001")
+        cmds = [b["action"]["command"] for r in rows for b in r]
+        assert any("pawel" in c for c in cmds)
+
+    def test_unknown_type_uses_default(self):
+        rows = build_buttons("cos_nieznanego", "M00001")
         assert len(rows) >= 1
 
-    def test_all_monitor_types_have_layouts(self):
-        for mtype in ("sec", "mail", "sejf", "gate", "najem", "skil"):
-            rows = build_buttons(mtype, "M00001", "warn")
-            assert len(rows) >= 1, f"brak layoutu dla {mtype}"
+    def test_all_types_have_layout(self):
+        for t in ("bezpieczenstwo", "sec", "mail", "sejf", "gate", "najem"):
+            assert len(build_buttons(t, "M00001")) >= 1
 
-    def test_styles_are_valid(self):
-        valid_styles = {"primary", "secondary", "success", "danger"}
-        rows = build_buttons("sec", "M00042", "critical")
-        for row in rows:
-            for btn in row:
-                assert btn.get("style") in valid_styles
+    def test_styles_valid(self):
+        valid = {"primary", "secondary", "success", "danger"}
+        rows = build_buttons("bezpieczenstwo", "M00099")
+        for r in rows:
+            for b in r:
+                assert b["style"] in valid
 
 
-class TestDescribeCallback:
-    def test_ack(self):
-        r = describe_callback("ack:M00042")
-        assert r["action"] == "ack"
-        assert r["alert_id"] == "M00042"
-        assert r["extra"] == ""
+class TestParseCommand:
+    def test_pawel(self):
+        r = parse_command("/alert_pawel M00099")
+        assert r["akcja"] == "pawel"
+        assert r["id"] == "M00099"
 
-    def test_silence_with_minutes(self):
-        r = describe_callback("silence:60:M00042")
-        assert r["action"] == "silence"
-        assert r["extra"] == "60"
-        assert r["alert_id"] == "M00042"
+    def test_pozniej(self):
+        r = parse_command("/alert_pozniej M00042")
+        assert r["akcja"] == "pozniej"
+        assert r["id"] == "M00042"
 
-    def test_expand(self):
-        r = describe_callback("expand:M00013")
-        assert r["action"] == "expand"
-        assert r["alert_id"] == "M00013"
+    def test_szczegoly(self):
+        r = parse_command("/alert_szczegoly M00013")
+        assert r["akcja"] == "szczegoly"
+        assert r["id"] == "M00013"
 
-    def test_escalate(self):
-        r = describe_callback("escalate:M00007")
-        assert r["action"] == "escalate"
-        assert r["alert_id"] == "M00007"
+    def test_zalatwione(self):
+        r = parse_command("/alert_zalatwione M00007")
+        assert r["akcja"] == "zalatwione"
+        assert r["id"] == "M00007"
 
-    def test_gate_status_no_alert(self):
-        r = describe_callback("gate_status")
-        assert r["action"] == "gate_status"
-        assert r["alert_id"] == ""
-
-    def test_reply(self):
-        r = describe_callback("reply:M00004")
-        assert r["action"] == "reply"
-        assert r["alert_id"] == "M00004"
+    def test_victor(self):
+        r = parse_command("/alert_victor M00100")
+        assert r["akcja"] == "victor"
+        assert r["id"] == "M00100"

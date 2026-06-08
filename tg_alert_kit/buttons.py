@@ -1,156 +1,77 @@
 # -*- coding: utf-8 -*-
-"""Dynamiczne układy przycisków inline per projekt/monitor.
+"""Przyciski alertow jako KOMENDY po polsku.
 
-Zasada Telegram-first: ZERO linków url — wszystko to callback_data.
-Kliknięcie wraca do agenta jako callback z wartością np. "ack:M00042".
+Wzorzec: metalmatze/alertmanager-bot + ix-ai/alertmanager-telegram-bot.
+Klik przycisku = bot dostaje komende (np. "/alert_pawel M00099"), agent ja
+wykonuje. POTWIERDZONE ze dziala (test 2026-06-08, M00099).
 
-Schemat przycisku OCPlatform (presentation.blocks):
-    {
-        "label": "✅ Ack",
-        "action": {"type": "callback", "value": "ack:M00042"},
-        "style": "success"   # primary | secondary | success | danger
-    }
+ZERO zargonu: etykiety po polsku mowia wprost co robia.
+Komendy: /alert_<akcja> <id>, obslugiwane przez agenta (Hugo/Victor).
 
-UKŁADY: każdy projekt ma własny zestaw rzędów. Funkcja build_buttons()
-dynamicznie dobiera układ na podstawie (monitor_type, severity, alert_id)
-i filtruje przyciski nieadekwatne dla danej wagi alertu.
+Akcje (slownik, nie wymyslanie przy kazdym alercie):
+    szczegoly  -> rozwin pelne info
+    pawel      -> przekaz Pawlowi (sprawy techniczne/serwer)
+    victor     -> przekaz do najmu
+    pozniej    -> odloz, przypomnij za 2h
+    zalatwione -> oznacz jako zalatwione
 """
 from __future__ import annotations
 from typing import Any
 
 
-# Baza szablonów: klucz = monitor type (np. "sec", "mail", "sejf").
-# Każdy rząd to lista przycisków. Zmienne {id} są podmieniane przy build.
-_LAYOUTS: dict[str, list[list[dict]]] = {
-
-    "sec": [
-        [
-            {"label": "🔎 Rozwiń szczegóły", "value": "expand:{id}", "style": "primary"},
-            {"label": "📄 Surowe dane",       "value": "raw:{id}",    "style": "secondary"},
-        ],
-        [
-            {"label": "✅ Ack",               "value": "ack:{id}",         "style": "success"},
-            {"label": "🔕 Wycisz 1h",         "value": "silence:60:{id}",  "style": "secondary"},
-        ],
-        # tylko critical:
-        [{"label": "📣 Eskaluj do Pawła",     "value": "escalate:{id}",    "style": "danger",
-          "_min_severity": "critical"}],
-    ],
-
-    "mail": [
-        [
-            {"label": "🔎 Rozwiń mail",       "value": "expand:{id}", "style": "primary"},
-            {"label": "✅ Ack",               "value": "ack:{id}",    "style": "success"},
-        ],
-        [
-            {"label": "↩️ Odpowiedz",         "value": "reply:{id}",       "style": "secondary"},
-            {"label": "💤 Pomiń",             "value": "snooze:{id}",      "style": "secondary"},
-        ],
-    ],
-
-    "sejf": [
-        [
-            {"label": "🔎 Rozwiń",            "value": "expand:{id}", "style": "primary"},
-            {"label": "✅ Ack",               "value": "ack:{id}",    "style": "success"},
-        ],
-        [{"label": "📣 Eskaluj",              "value": "escalate:{id}", "style": "danger",
-          "_min_severity": "warn"}],
-    ],
-
-    "gate": [
-        [
-            {"label": "🔎 Rozwiń",            "value": "expand:{id}",  "style": "primary"},
-            {"label": "⚙️ Status gateway",    "value": "gate_status",  "style": "secondary"},
-        ],
-        [
-            {"label": "✅ Ack",               "value": "ack:{id}",           "style": "success"},
-            {"label": "🔕 Wycisz 30m",        "value": "silence:30:{id}",    "style": "secondary"},
-        ],
-    ],
-
-    "najem": [
-        [
-            {"label": "🔎 Rozwiń",            "value": "expand:{id}",   "style": "primary"},
-            {"label": "✅ Wziąłem do wiedzy", "value": "ack:{id}",      "style": "success"},
-        ],
-        [
-            {"label": "📣 Eskaluj do Victora","value": "escalate:{id}", "style": "danger",
-             "_min_severity": "critical"},
-        ],
-    ],
-
-    "skil": [
-        [
-            {"label": "🔎 Rozwiń raport",     "value": "expand:{id}",  "style": "primary"},
-            {"label": "✅ Ack",               "value": "ack:{id}",     "style": "success"},
-        ],
-    ],
-
-    # fallback — każdy nieznany monitor type
-    "_default": [
-        [
-            {"label": "🔎 Rozwiń",            "value": "expand:{id}", "style": "primary"},
-            {"label": "✅ Ack",               "value": "ack:{id}",    "style": "success"},
-        ],
-        [
-            {"label": "📣 Eskaluj",           "value": "escalate:{id}", "style": "danger",
-             "_min_severity": "critical"},
-        ],
-    ],
+# Etykieta -> (komenda, styl). Styl: primary | secondary | success | danger
+_ACTIONS = {
+    "szczegoly":  ("Pokaz szczegoly",   "/alert_szczegoly",  "primary"),
+    "pawel":      ("Wyslij do Pawla",   "/alert_pawel",      "danger"),
+    "victor":     ("Przekaz do najmu",  "/alert_victor",     "primary"),
+    "pozniej":    ("Odloz na pozniej",  "/alert_pozniej",    "secondary"),
+    "zalatwione": ("Zalatwione",        "/alert_zalatwione", "success"),
 }
 
-_SEVERITY_ORDER = {"info": 0, "warn": 1, "warning": 1, "critical": 2, "error": 2}
+# Ktore przyciski dla ktorego typu alertu (gotowe zestawy, nie wymyslanie)
+_LAYOUTS = {
+    "bezpieczenstwo": [["szczegoly", "pawel"], ["pozniej", "zalatwione"]],
+    "sec":            [["szczegoly", "pawel"], ["pozniej", "zalatwione"]],
+    "mail":           [["szczegoly"], ["pozniej", "zalatwione"]],
+    "sejf":           [["szczegoly", "pawel"], ["zalatwione"]],
+    "gate":           [["szczegoly", "pawel"], ["pozniej", "zalatwione"]],
+    "najem":          [["szczegoly", "victor"], ["pozniej", "zalatwione"]],
+    "_default":       [["szczegoly"], ["pozniej", "zalatwione"]],
+}
 
 
-def _severity_level(s: str) -> int:
-    return _SEVERITY_ORDER.get((s or "info").lower(), 0)
+def build_buttons(alert_type: str, alert_id: str) -> list[list[dict[str, Any]]]:
+    """Zwraca rzedy przyciskow w formacie OCPlatform presentation.blocks[].buttons.
 
-
-def build_buttons(
-    monitor_type: str,
-    alert_id: str,
-    severity: str = "warn",
-) -> list[list[dict[str, Any]]]:
-    """Zwraca listę rzędów przycisków w formacie OCPlatform presentation.blocks.
-
-    Każdy element to lista przycisków jednego rzędu:
-        [[{label, action:{type,value}, style}, ...], ...]
-
-    Przyciski z _min_severity są pomijane jeśli severity < próg.
+    Kazdy przycisk: {label, action:{type:"command", command:"/alert_x ID"}, style}
     """
-    layout = _LAYOUTS.get((monitor_type or "").lower(), _LAYOUTS["_default"])
-    sev = _severity_level(severity)
+    layout = _LAYOUTS.get((alert_type or "").lower(), _LAYOUTS["_default"])
     rows = []
-    for row_tmpl in layout:
+    for row_keys in layout:
         row = []
-        for btn in row_tmpl:
-            min_sev = _severity_level(btn.get("_min_severity", "info"))
-            if sev < min_sev:
+        for key in row_keys:
+            if key not in _ACTIONS:
                 continue
-            value = btn["value"].replace("{id}", str(alert_id))
+            label, cmd, style = _ACTIONS[key]
             row.append({
-                "label": btn["label"],
-                "action": {"type": "callback", "value": value},
-                "style": btn.get("style", "secondary"),
+                "label": label,
+                "action": {"type": "command", "command": f"{cmd} {alert_id}"},
+                "style": style,
             })
         if row:
             rows.append(row)
     return rows
 
 
-def describe_callback(value: str) -> dict[str, str]:
-    """Parsuje callback value z powrotem na (action, alert_id, extra).
+def parse_command(text: str) -> dict[str, str]:
+    """Parsuje przychodzaca komende '/alert_pawel M00099' -> {akcja, id}.
 
-    Uzycie w handlerze:
-        info = describe_callback(callback_data)
-        # info = {"action": "ack", "alert_id": "M00042", "extra": ""}
-        # info = {"action": "silence", "alert_id": "M00042", "extra": "60"}
+    Uzycie w agencie gdy przyjdzie klik:
+        info = parse_command("/alert_pawel M00099")
+        # {"akcja": "pawel", "id": "M00099"}
     """
-    parts = value.split(":")
-    action = parts[0] if parts else "unknown"
-    if action in ("silence",) and len(parts) >= 3:
-        return {"action": action, "extra": parts[1], "alert_id": parts[2]}
-    elif action == "gate_status":
-        return {"action": action, "extra": "", "alert_id": ""}
-    else:
-        return {"action": action, "extra": "", "alert_id": parts[1] if len(parts) > 1 else ""}
+    parts = text.strip().split()
+    cmd = parts[0] if parts else ""
+    akcja = cmd.replace("/alert_", "") if cmd.startswith("/alert_") else ""
+    alert_id = parts[1] if len(parts) > 1 else ""
+    return {"akcja": akcja, "id": alert_id}

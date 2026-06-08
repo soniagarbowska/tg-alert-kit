@@ -1,98 +1,86 @@
 # tg-alert-kit
 
-Telegram-first alert renderer dla systemu powiadomień Soni (Hugo + Victor).
+Alerty na Telegram dla Soni. Wzorzec: **metalmatze/alertmanager-bot** (653 gwiazdki) — sprawdzony gotowiec, nie wymyslanie.
 
 ## Zasada
 
-**Telegram-first** — zero linków na zewnątrz. Wszystko obsługiwane w Telegramie przez przyciski inline z callbackami. Klik Soni wraca do agenta (Hugo/Victor) i tam jest obsługiwany.
+- Przyciski to **komendy po polsku**, nie martwe callbacki. Klik = bot dostaje `/alert_pawel M00099`, agent wykonuje akcje. **Potwierdzone ze dziala** (test 2026-06-08).
+- Zero ACK, zero angielskiego zargonu. Etykiety mowia wprost co robia.
+- Layout jak alertmanager-bot: ikona + tytul, pola `klucz: wartosc`, ID na dole.
 
-## Wygląd alertu (card style)
+## Jak wyglada alert
 
 ```
-🔶  🛡️ SEC · Nowe logowanie SSH
+🔥  Nowe logowanie na serwer
 
-▎ Skąd         185.1.2.3
-▎ Kiedy        16:32 UTC
-▎ Wynik        SUKCES
+• Skad: 185.220.101.47
+• Kiedy: 17:20
+• Wynik: udane
 
-M00042 · 16:32 UTC
+Nieznany adres. Sprawdz czy to Ty.
 
-[🔎 Rozwiń szczegóły]  [📄 Surowe dane]
-[✅ Ack]               [🔕 Wycisz 1h]
+M00099
+
+[Pokaz szczegoly]   [Wyslij do Pawla]
+[Odloz na pozniej]  [Zalatwione]
 ```
 
-## Paleta ikon (kuratorska)
+## Ikony (jak alertmanager-bot)
 
-| Severity    | Ikona | Domena  | Ikona |
-|-------------|-------|---------|-------|
-| critical    | 🚨    | sec     | 🛡️   |
-| error       | ⛔    | mail    | ✉️   |
-| warn        | 🔶    | sejf    | 🔐   |
-| ok/recovery | 🟢    | gate    | 🚧   |
-| info        | 🔷    | najem   | 🏠   |
-|             |       | skil    | 🧩   |
-|             |       | money   | 💰   |
-|             |       | deadline| ⏳   |
+- 🔥 krytyczny / aktywny problem (firing)
+- ⚠️ uwaga
+- ℹ️ informacja
+- ✅ zalatwione / przywrocone (resolved)
 
-## Przyciski per projekt
+## Przyciski = komendy
 
-| Monitor  | Przyciski warn            | Dodatkowe critical     |
-|----------|--------------------------|------------------------|
-| sec      | Rozwiń, Surowe, Ack, Wycisz 1h | Eskaluj do Pawła  |
-| mail     | Rozwiń, Ack, Odpowiedz, Pomiń  | —                  |
-| sejf     | Rozwiń, Ack              | Eskaluj               |
-| gate     | Rozwiń, Status, Ack, Wycisz 30m | —                |
-| najem    | Rozwiń, Ack              | Eskaluj do Victora    |
-| skil     | Rozwiń raport, Ack        | —                     |
+| Etykieta          | Komenda              | Co robi                    |
+|-------------------|----------------------|----------------------------|
+| Pokaz szczegoly   | /alert_szczegoly ID  | rozwijam pelne info        |
+| Wyslij do Pawla   | /alert_pawel ID      | przekazuje Pawlowi (tech)  |
+| Przekaz do najmu  | /alert_victor ID     | przekazuje do najmu        |
+| Odloz na pozniej  | /alert_pozniej ID    | przypomne za 2h            |
+| Zalatwione        | /alert_zalatwione ID | oznaczam jako zalatwione   |
 
-## Użycie
+## Zestawy przyciskow per typ alertu
+
+| Typ            | Przyciski                                    |
+|----------------|----------------------------------------------|
+| bezpieczenstwo | szczegoly, Pawel, pozniej, zalatwione        |
+| mail           | szczegoly, pozniej, zalatwione               |
+| sejf           | szczegoly, Pawel, zalatwione                 |
+| gate           | szczegoly, Pawel, pozniej, zalatwione        |
+| najem          | szczegoly, Victor, pozniej, zalatwione       |
+
+## Uzycie
 
 ```python
-from tg_alert_kit import render_alert, send_alert
+from tg_alert_kit import render_alert
 
-# Render tylko (do podejrzenia / testów)
-payload = render_alert(
-    alert_id="M00042",
-    monitor_type="sec",
-    title="Nowe logowanie SSH",
-    fields=[("Skąd", "185.1.2.3"), ("Kiedy", "16:32 UTC"), ("Wynik", "SUKCES")],
-    severity="warn",
+a = render_alert(
+    alert_id="M00099",
+    alert_type="bezpieczenstwo",
+    title="Nowe logowanie na serwer",
+    fields=[("Skad", "185.220.101.47"), ("Kiedy", "17:20"), ("Wynik", "udane")],
+    severity="critical",
+    note="Nieznany adres. Sprawdz czy to Ty.",
 )
-print(payload["text"])          # MarkdownV2
-print(payload["presentation"])  # OCPlatform presentation object
+# a["presentation"] -> wysylasz przez narzedzie message (z przyciskami)
+```
 
-# Wyślij przez OpenClaw (Telegram-first, z callbackami)
-result = send_alert(
-    alert_id="M00042",
-    monitor_type="sec",
-    title="Nowe logowanie SSH",
-    fields=[("Skąd", "185.1.2.3"), ("Kiedy", "16:32 UTC")],
-    severity="warn",
-    agent_id="hugo-works",
-)
+Gdy przyjdzie klik (komenda):
+```python
+from tg_alert_kit import parse_command
+info = parse_command("/alert_pawel M00099")   # {"akcja": "pawel", "id": "M00099"}
 ```
 
 ## Testy
 
 ```bash
-cd /home/sonia/projects/tg-alert-kit
-python -m pytest tests/ -v
+python3 -m pytest tests/ -q   # 25 passed
 ```
 
-## Architektura wysyłki
+## Zrodla
 
-```
-notify_sonia.py (cron/skrypty)
-    └─→ tg_alert_kit.sender.send_alert()
-            ├─→ render_alert() → payload (text + presentation + buttons)
-            └─→ send_via_ocplatform() → OCPlatform gateway HTTP API
-                    └─→ Telegram (z przyciskami inline)
-                            └─→ klik Soni → callback → agent Hugo/Victor
-```
-
-## Źródła / inspiracje
-
-- Wzorce: Grafana, UptimeRobot, Healthchecks.io, Sentry, BetterStack
-- Research: Perplexity sonar-pro 2026-06-08
-- Escaping: sudoskys/telegramify-markdown (podejście)
-- Callback patterns: metalmatze/alertmanager-bot
+- metalmatze/alertmanager-bot (default.tmpl) — layout, ikony firing/resolved
+- ix-ai/alertmanager-telegram-bot — przyciski jako akcje

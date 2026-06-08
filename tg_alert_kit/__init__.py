@@ -1,44 +1,23 @@
 # -*- coding: utf-8 -*-
-"""tg-alert-kit — Telegram-first alert renderer z dynamicznymi przyciskami.
+"""tg-alert-kit — alerty na Telegram, wzorzec metalmatze/alertmanager-bot.
 
-Telegram-first workflow: wszystko obsługiwane w Telegramie, zero linkow na zewnatrz.
-Przyciski inline z callbackami, ikony per domena, MarkdownV2 card style.
+Przyciski jako KOMENDY po polsku (potwierdzone ze dziala). Zero ACK, zero zargonu.
 
-Szybki start:
-    from tg_alert_kit import render_alert, build_buttons
-    from tg_alert_kit.sender import send_alert
+    from tg_alert_kit import render_alert, build_buttons, parse_command
 
-    payload = render_alert(
-        alert_id="M00042",
-        monitor_type="sec",
-        title="Nowe logowanie SSH",
-        fields=[("Skad", "185.1.2.3"), ("Kiedy", "16:32 UTC"), ("Wynik", "SUKCES")],
-        severity="warn",
+    a = render_alert(
+        alert_id="M00099",
+        alert_type="bezpieczenstwo",
+        title="Nowe logowanie na serwer",
+        fields=[("Skad", "185.220.101.47"), ("Kiedy", "17:20"), ("Wynik", "udane")],
+        severity="critical",
+        note="Nieznany adres. Sprawdz czy to Ty.",
     )
-    # payload["text"]         -> MarkdownV2 do wyslania
-    # payload["presentation"] -> OCPlatform presentation object (z przyciskami)
+    # a["presentation"] -> wysylasz przez narzedzie message (z przyciskami)
 """
-from .render import render_alert, render_info
-from .buttons import build_buttons, describe_callback
-from .escape import md, bold, code, italic, mono_block
-from .icons import severity_icon, domain_icon, action_icon
+from .render import render_alert
+from .buttons import build_buttons, parse_command
+from .icons import state_icon, severity_icon
 
-__version__ = "0.1.0"
-__all__ = [
-    "render_alert", "render_info",
-    "build_buttons", "describe_callback",
-    "md", "bold", "code", "italic", "mono_block",
-    "severity_icon", "domain_icon", "action_icon",
-    # sender importowany lazy:
-    "send_alert", "send_via_ocplatform", "send_raw_telegram",
-]
-
-
-def __getattr__(name):
-    """Lazy import sender (ma systemowe zaleznosci, nie chcemy go przy testach)."""
-    if name in ("send_alert", "send_via_ocplatform", "send_raw_telegram"):
-        from .sender import send_alert, send_via_ocplatform, send_raw_telegram
-        g = {"send_alert": send_alert, "send_via_ocplatform": send_via_ocplatform,
-             "send_raw_telegram": send_raw_telegram}
-        return g[name]
-    raise AttributeError(f"module 'tg_alert_kit' has no attribute {name!r}")
+__version__ = "0.2.0"
+__all__ = ["render_alert", "build_buttons", "parse_command", "state_icon", "severity_icon"]
