@@ -166,8 +166,14 @@ def _render_block(blk: tuple) -> list[str]:
     return []
 
 
-def compose(blocks: Iterable[tuple]) -> str:
-    """Sklada liste klockow w tekst w stylu #439."""
+def compose(blocks: Iterable[tuple], *, mask_pii: bool = True) -> str:
+    """Sklada liste klockow w tekst w stylu #439.
+
+    mask_pii: domyslnie True -> przepuszcza tekst przez centralna polityke PII
+    (~/wiki/scripts/mask_sensitive.py). Maskuje TYLKO twarde dane wrazliwe
+    (PESEL/dowod/data ur./konto/NIP/KW). Imie, nazwisko, TELEFON, e-mail, adres
+    zostaja widoczne — zgodnie z zasada Soni (2026-06-08).
+    """
     out: list[str] = []
     for blk in blocks:
         out.extend(_render_block(blk))
@@ -175,4 +181,11 @@ def compose(blocks: Iterable[tuple]) -> str:
     text = "\n".join(out)
     while "\n\n\n" in text:
         text = text.replace("\n\n\n", "\n\n")
-    return text.strip()
+    text = text.strip()
+    if mask_pii:
+        try:
+            from .pii import mask as _mask
+            text = _mask(text) or text
+        except Exception:
+            pass
+    return text

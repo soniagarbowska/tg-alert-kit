@@ -64,3 +64,13 @@ bruno-web   -> seo (strona WWW)
 ## Wniosek dla kitu
 Potrzebne przepisy: alert, digest, status (sa) + **mail**, **decision** (DOdac — to realne ksztalty).
 Zadnych kosiarek: dane to najem, faktury, bezpieczenstwo serwera, jakosc CRM/wiki.
+
+## Polityka PII (zasada Soni, audyt 2026-06-08)
+Maskowanie = JEDNO zrodlo: `~/wiki/scripts/mask_sensitive.py` (podpiete przez pii.py).
+- MASKUJ tylko twarde dane wrazliwe: PESEL, nr dowodu, data urodzenia, konto/IBAN,
+  NIP, nr ksiegi wieczystej.
+- NIE maskuj: imie, nazwisko, adres, TELEFON, e-mail (to NIE sa dane wrazliwe).
+- compose() domyslnie przepuszcza tekst przez te polityke (mask_pii=True).
+- Przycisk "Pokaz pelne (2FA)" tylko gdy COS faktycznie zamaskowano (has_masked).
+  Telefon/nazwisko pokazujemy wprost -> bez 2FA, bo nie ma czego odslaniac.
+- W komunikacie podawaj KTO (imie i nazwisko), zeby bylo wiadomo kogo dotyczy.

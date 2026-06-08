@@ -17,13 +17,17 @@ def test_from_options_deterministic():
         {"name": "Przyjac nowy: ...888", "button": "Numer ...888"},
         {"name": "Zostawic stary: ...200", "button": "Numer ...200"},
     ]
+    # bez maskowania -> brak przycisku 2FA
     rows = actions.from_options(opts, "M00013")
     cmds = _cmds(rows)
     assert "/alert_wybierz M00013 1" in cmds
     assert "/alert_wybierz M00013 2" in cmds
-    # druga linia: pokaz + pozniej
-    assert "/alert_pokaz M00013" in cmds
+    assert "/alert_pokaz M00013" not in cmds      # nic nie zamaskowane
+    assert "/alert_pozniej M00013" in cmds
     assert "Numer ...888" in _labels(rows)
+    # z maskowaniem -> pojawia sie 2FA
+    rows2 = actions.from_options(opts, "M00013", has_masked=True)
+    assert "/alert_pokaz M00013" in _cmds(rows2)
 
 
 def test_decision_notify_uses_options():

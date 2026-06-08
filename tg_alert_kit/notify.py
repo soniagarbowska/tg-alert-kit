@@ -77,7 +77,10 @@ def notify(
     if buttons_for is not None:
         opts = kwargs.get("options")
         if recipe == "decision" and opts:
-            rows = _actions.from_options(opts, alert_id)
+            # czy maskowanie faktycznie cos ukrylo? (znaczniki [DANE]/[KONTO]/...)
+            has_masked = any(tok in text for tok in
+                             ("[DANE]", "[KONTO]", "[DOWOD]", "[KW]", "[DATA-UR]"))
+            rows = _actions.from_options(opts, alert_id, has_masked=has_masked)
         elif llm_fn is not None:
             title = str(kwargs.get("title", ""))
             rows = _actions.suggest_with_llm(btype, alert_id, title, text, llm_fn)

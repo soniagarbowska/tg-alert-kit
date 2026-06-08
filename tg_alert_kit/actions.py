@@ -78,11 +78,16 @@ def _btn(action_id: str, alert_id: str, *, label: str | None = None,
     }
 
 
-def from_options(options: list[dict], alert_id: str) -> list[list[dict[str, Any]]]:
+def from_options(options: list[dict], alert_id: str,
+                 *, has_masked: bool = False) -> list[list[dict[str, Any]]]:
     """DETERMINISTYCZNIE: przycisk z kazdej opcji decyzji (1:1 z danych).
 
     Etykieta = krotka nazwa opcji. Komenda = /alert_wybierz {id} {1|2|...}.
     To jest najpewniejsza sciezka — zero LLM, zero ryzyka.
+
+    has_masked: czy w tresci faktycznie cos zamaskowano (twarde PII). Przycisk
+    "Pokaz pelne (2FA)" dodajemy TYLKO wtedy — bez tego nie ma czego odslaniac
+    (telefon/nazwisko nie sa wrazliwe, zasada Soni 2026-06-08).
     """
     row = []
     for idx, opt in enumerate(options, 1):
@@ -97,12 +102,13 @@ def from_options(options: list[dict], alert_id: str) -> list[list[dict[str, Any]
             "style": "primary",
         })
     rows = [row] if row else []
-    # druga linia: pokaz pelne + pozniej (jak sa w whitelist sejf)
+    # druga linia: pokaz pelne (TYLKO gdy cos zamaskowane) + pozniej
     extra = []
-    pb = _btn("pokaz", alert_id)
+    if has_masked:
+        pb = _btn("pokaz", alert_id)
+        if pb:
+            extra.append(pb)
     lb = _btn("pozniej", alert_id)
-    if pb:
-        extra.append(pb)
     if lb:
         extra.append(lb)
     if extra:
