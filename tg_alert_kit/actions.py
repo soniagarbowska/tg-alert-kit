@@ -47,6 +47,9 @@ CATALOG: dict[str, dict[str, Any]] = {
     "zostaw_nowe": {"label": "Zostaw nowe",         "cmd": "/alert_zostaw_nowe {id}", "style": "primary"},
     "zostaw_stare":{"label": "Zostaw stare",        "cmd": "/alert_zostaw_stare {id}","style": "secondary"},
     "scal":        {"label": "Scal",                "cmd": "/alert_scal {id}",       "style": "primary"},
+    # --- skille (propozycje skill_proposer) ---
+    "buduj":       {"label": "Buduj ten skill",     "cmd": "/alert_buduj {id}",      "style": "primary"},
+    "nie_teraz":   {"label": "Nie teraz",           "cmd": "/alert_nie_teraz {id}",  "style": "secondary"},
 }
 
 # DOZWOLONE akcje per typ (whitelist). LLM moze wybierac TYLKO z tej listy.
@@ -60,7 +63,8 @@ ALLOWED: dict[str, list[str]] = {
     "wiki":           ["zostaw_nowe", "zostaw_stare", "scal", "pozniej"],
     "crm":            ["scal", "odrzuc", "pozniej"],
     "seo":            ["zalatwione", "pozniej"],
-    "skille":         ["zalatwione", "odrzuc"],
+    "skille":         ["buduj", "nie_teraz", "odrzuc"],
+    "proposal":       ["buduj", "nie_teraz", "odrzuc"],
     "_default":       ["pozniej", "zalatwione"],
 }
 

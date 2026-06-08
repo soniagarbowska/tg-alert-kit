@@ -197,6 +197,54 @@ def recipe_decision(
 
 
 # ---------------------------------------------------------------------------
+# PRZEPIS 6: proposal — pojedyncza propozycja skilla (realny ksztalt M00023)
+#   nazwa, dla kogo (agent), typ (nowy/uzupelnienie), priorytet, co robi, z czego
+#   wynika. KAZDA propozycja = OSOBNE powiadomienie (zasada Soni: nie zlepek).
+# ---------------------------------------------------------------------------
+_PRIO_SEV = {"h": "warn", "wysoki": "warn", "m": "info", "sredni": "info",
+             "l": "info", "niski": "info"}
+_PRIO_WORD = {"h": "wysoki", "m": "sredni", "l": "niski"}
+
+
+def recipe_proposal(
+    name: str,
+    what: str,
+    agent: str | None = None,
+    kind: str | None = None,      # "Nowy skill" / "Rozwiniecie"
+    priority: str | None = None,  # H/M/L
+    evidence: str | None = None,
+    index: str | None = None,     # np. "2 z 6"
+    alert_id: str = "",
+) -> list[tuple]:
+    sev = _PRIO_SEV.get((priority or "m").strip().lower(), "info")
+    icon = SEV_ICON.get(sev, "ℹ️")
+    sub_bits = []
+    if kind:
+        sub_bits.append(kind)
+    if index:
+        sub_bits.append(f"propozycja {index}")
+    sub = "Skill" + ("  ·  " + "  ·  ".join(sub_bits) if sub_bits else "")
+    blocks: list[tuple] = [
+        ("header", icon, name, sub),
+        ("divider",),
+    ]
+    meta = []
+    if agent:
+        meta.append(("field", "Dla", agent, "plain"))
+    if priority:
+        pw = _PRIO_WORD.get(priority.strip().lower(), priority)
+        meta.append(("field", "Priorytet", pw, "plain"))
+    if meta:
+        blocks += meta
+    blocks += [("section", "Co ma robic"), ("text", what)]
+    if evidence:
+        blocks += [("section", "Z czego wynika"), ("note", evidence)]
+    foot = f"⏱ {_clock()}" + (f"  ·  {alert_id}" if alert_id else "")
+    blocks.append(("footer", foot))
+    return blocks
+
+
+# ---------------------------------------------------------------------------
 # REJESTR przepisow: typ powiadomienia -> funkcja przepisu
 # ---------------------------------------------------------------------------
 RECIPES: dict[str, Callable[..., list[tuple]]] = {
@@ -205,6 +253,7 @@ RECIPES: dict[str, Callable[..., list[tuple]]] = {
     "status":   recipe_status,
     "mail":     recipe_mail,
     "decision": recipe_decision,
+    "proposal": recipe_proposal,
 }
 
 
