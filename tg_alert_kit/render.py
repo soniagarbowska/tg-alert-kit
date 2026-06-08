@@ -56,11 +56,12 @@ def render_alert(
     tone = _TONE.get(sev, "warning")
     icon = severity_icon(sev)
 
-    # Naglowek jak u nich: ICON <b>tytul</b> ICON
-    lines = [f"{icon}  {title}"]
+    # Naglowek jak alertmanager-bot: ICON **tytul** (pogrubiony)
+    # Markdown ** dziala na naszym kanale (zweryfikowane 2026-06-08).
+    lines = [f"{icon}  **{title}**"]
     lines.append("")
     for key, val in (fields or []):
-        lines.append(f"{BULLET} {key}: {val}")
+        lines.append(f"{BULLET} **{key}:** {val}")
     if note:
         lines.append("")
         lines.append(note)
