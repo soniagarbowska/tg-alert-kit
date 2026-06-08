@@ -132,6 +132,22 @@ def _render_block(blk: tuple) -> list[str]:
             line += f" — {tag}"
         return [line]
 
+    if kind == "section":
+        # ("section", "NAGLOWEK") -> pusta linia + pogrubiony naglowek sekcji
+        return ["", b(str(blk[1]).upper())]
+
+    if kind == "option":
+        # ("option", marker, name, za, ryzyko) -> zwarty blok opcji (bez pustych linii
+        # wewnatrz). 'za'/'ryzyko' zaczynaja sie od slowa (nie +/-), bo Telegram
+        # zamienia linie z + lub - na identyczne kropki listy (zweryfikowane #512).
+        _, marker, name, za, ryz = (list(blk) + [None] * 5)[:5]
+        lines = [f"{marker} {b(name)}"]
+        if za:
+            lines.append(f"     {b('Za:')} {za}")
+        if ryz:
+            lines.append(f"     {b('Ryzyko:')} {ryz}")
+        return lines
+
     if kind == "note":
         return [f"> {blk[1]}"]
 

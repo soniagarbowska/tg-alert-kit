@@ -164,28 +164,33 @@ def recipe_decision(
     badge: str | None = None,
     alert_id: str = "",
 ) -> list[tuple]:
-    """options: [{name, plus, minus}]  (plus/minus opcjonalne)"""
+    """options: [{name, plus, minus}]  (plus/minus opcjonalne)
+
+    UX: jasne sekcje, zeby od razu bylo widac CO jest wsadem, GDZIE opcje,
+    GDZIE rekomendacja i JAK odpowiedziec. Markery opcji ◆ (BMP). 'Za/Ryzyko'
+    zamiast +/- bo Telegram zamienia linie z +/- na identyczne kropki (#512).
+    """
     sev = (severity or "warn").lower()
     icon = SEV_ICON.get(sev, "⚠️")
-    sub = "DECYZJA" + (f"  ·  {badge}" if badge else "")
+    sub = "Decyzja do podjecia" + (f"  ·  {badge}" if badge else "")
     blocks: list[tuple] = [
         ("header", icon, title, sub),
         ("divider",),
-        ("space",),
+        ("section", "Sytuacja"),
         ("text", context),
-        ("space",),
+        ("section", "Opcje"),
     ]
-    for idx, opt in enumerate(options, 1):
-        name = opt.get("name", f"Opcja {idx}")
-        blocks.append(("text", f"{b(str(idx) + ') ' + name)}"))
-        if opt.get("plus"):
-            blocks.append(("text", f"   + {opt['plus']}"))
-        if opt.get("minus"):
-            blocks.append(("text", f"   - {opt['minus']}"))
+    # marker ◆ (BMP) zamiast "1)" — Telegram zamienia "1)"/"1." na auto-liste
+    # i gubi formatowanie. Numer trzymamy w nazwie, ale dyskretnie.
+    for idx, opt in enumerate(options):
+        name = opt.get("name", f"Opcja {idx + 1}")
+        if idx > 0:
+            blocks.append(("space",))   # odstep miedzy opcjami (czytelnosc)
+        blocks.append(("option", "◆", name, opt.get("plus"), opt.get("minus")))
     if recommendation:
-        blocks += [("space",), ("note", f"Rekomendacja: {recommendation}")]
+        blocks += [("section", "Rekomendacja"), ("note", recommendation)]
     if how_to_answer:
-        blocks.append(("text", how_to_answer))
+        blocks += [("section", "Jak odpowiedziec"), ("text", how_to_answer)]
     foot = f"⏱ {_clock()}" + (f"  ·  {alert_id}" if alert_id else "")
     blocks.append(("footer", foot))
     return blocks

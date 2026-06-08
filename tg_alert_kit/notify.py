@@ -26,6 +26,7 @@ import inspect
 
 from .presets import render_recipe, RECIPES
 from .buttons import build_buttons
+from . import actions as _actions
 from .text_alert import SEV_ICON
 
 _TONE = {
@@ -41,6 +42,7 @@ def notify(
     buttons_for: str | None = None,
     alert_id: str = "",
     severity: str | None = None,
+    llm_fn: Any = None,
     **kwargs,
 ) -> dict[str, Any]:
     """Buduje powiadomienie tekstowe w stylu #439 + przyciski.
@@ -65,10 +67,22 @@ def notify(
     sev = (severity or kwargs.get("severity") or "info").lower()
     tone = _TONE.get(sev, "info")
 
+    # --- KONTEKSTOWE przyciski ---------------------------------------------
+    # 1) decyzja z opcjami -> deterministycznie przycisk z kazdej opcji (zero LLM)
+    # 2) inny typ + llm_fn -> LLM wybiera z whitelist katalogu
+    # 3) inaczej -> domyslny zestaw z whitelist danego typu
     blocks: list[dict] = []
     rows: list = []
-    if buttons_for:
-        rows = build_buttons(buttons_for, alert_id)
+    btype = (buttons_for or recipe or "_default")
+    if buttons_for is not None:
+        opts = kwargs.get("options")
+        if recipe == "decision" and opts:
+            rows = _actions.from_options(opts, alert_id)
+        elif llm_fn is not None:
+            title = str(kwargs.get("title", ""))
+            rows = _actions.suggest_with_llm(btype, alert_id, title, text, llm_fn)
+        else:
+            rows = _actions.default_for(btype, alert_id)
         blocks = [{"type": "buttons", "buttons": row} for row in rows]
 
     return {

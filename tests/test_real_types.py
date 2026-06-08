@@ -35,10 +35,13 @@ def test_decision_sejf_konflikt_telefonu():
                how_to_answer="Glosowka: NOWY czy STARY. Pelne? Napisz POKAZ.",
                severity="warn", badge="Sejf", buttons_for="sejf", alert_id="M00013")
     t = n["text"]
-    assert "DECYZJA" in t and "Sejf" in t
-    assert "**1) NOWY" in t and "**2) STARY" in t
-    assert "+ aktualne" in t and "- jesli literowka" in t
-    assert "> Rekomendacja: STARY" in t
+    assert "Decyzja do podjecia" in t and "Sejf" in t
+    # nowy uklad: jasne sekcje
+    assert "**SYTUACJA**" in t and "**OPCJE**" in t and "**REKOMENDACJA**" in t
+    assert "NOWY" in t and "STARY" in t
+    # za/ryzyko zamiast +/- (Telegram zjada +/-)
+    assert "**Za:**" in t and "**Ryzyko:**" in t
+    assert "aktualne" in t
     assert n["tone"] == "warning"
 
 
