@@ -7,8 +7,10 @@ POTWIERDZONE ze dziala (test 2026-06-08, M00099).
 ZASADA: alerty obsluguja TYLKO Sonia i Hugo. Zadnego "wyslij do Pawla/Victora".
 Wszystko zalatwiamy miedzy soba w czacie.
 
+ZASADA 2: wiadomosc zawiera PELNE info od razu. Zadnego 'pokaz szczegoly' —
+wszystko co wazne jest w tekscie alertu. Przyciski to tylko REALNE akcje.
+
 Akcje:
-    szczegoly  -> Hugo rozwija pelne info
     to_ja      -> Sonia potwierdza ze to bylo Jej dzialanie (bezpieczenstwo)
     nie_ja     -> Sonia mowi ze to NIE Ona -> Hugo sprawdza glebiej
     pozniej    -> odloz, Hugo przypomni za 2h
@@ -20,22 +22,21 @@ from typing import Any
 
 # Etykieta -> (tekst na przycisku, komenda, styl)
 _ACTIONS = {
-    "szczegoly":  ("Pokaz szczegoly",  "/alert_szczegoly",  "primary"),
     "to_ja":      ("To bylam ja",       "/alert_toja",       "success"),
     "nie_ja":     ("To nie ja",         "/alert_nieja",      "danger"),
     "pozniej":    ("Odloz na pozniej",  "/alert_pozniej",    "secondary"),
     "zalatwione": ("Zalatwione",        "/alert_zalatwione", "success"),
 }
 
-# Zestawy per typ alertu — tylko akcje miedzy Sonia a Hugo
+# Zestawy per typ alertu — tylko REALNE akcje miedzy Sonia a Hugo
 _LAYOUTS = {
-    "bezpieczenstwo": [["to_ja", "nie_ja"], ["szczegoly", "pozniej"]],
-    "sec":            [["to_ja", "nie_ja"], ["szczegoly", "pozniej"]],
-    "mail":           [["szczegoly"], ["pozniej", "zalatwione"]],
-    "sejf":           [["szczegoly", "pozniej"], ["zalatwione"]],
-    "gate":           [["szczegoly", "pozniej"], ["zalatwione"]],
-    "najem":          [["szczegoly", "pozniej"], ["zalatwione"]],
-    "_default":       [["szczegoly"], ["pozniej", "zalatwione"]],
+    "bezpieczenstwo": [["to_ja", "nie_ja"], ["pozniej"]],
+    "sec":            [["to_ja", "nie_ja"], ["pozniej"]],
+    "mail":           [["pozniej", "zalatwione"]],
+    "sejf":           [["pozniej", "zalatwione"]],
+    "gate":           [["pozniej", "zalatwione"]],
+    "najem":          [["pozniej", "zalatwione"]],
+    "_default":       [["pozniej", "zalatwione"]],
 }
 
 

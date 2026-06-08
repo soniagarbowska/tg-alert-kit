@@ -77,11 +77,6 @@ class TestParseCommand:
         assert r["akcja"] == "pozniej"
         assert r["id"] == "M00042"
 
-    def test_szczegoly(self):
-        r = parse_command("/alert_szczegoly M00013")
-        assert r["akcja"] == "szczegoly"
-        assert r["id"] == "M00013"
-
     def test_zalatwione(self):
         r = parse_command("/alert_zalatwione M00007")
         assert r["akcja"] == "zalatwione"
