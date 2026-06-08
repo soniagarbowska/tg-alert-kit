@@ -119,12 +119,87 @@ def recipe_status(
 
 
 # ---------------------------------------------------------------------------
+# PRZEPIS 4: mail — pojedynczy mail (realny ksztalt M00007/M00014)
+#   nadawca, temat, streszczenie (SYTUACJA), akcja/termin (AKCJA jako cytat)
+# ---------------------------------------------------------------------------
+def recipe_mail(
+    sender: str,
+    subject: str,
+    summary: str | None = None,
+    action: str | None = None,
+    deadline: str | None = None,
+    severity: str = "info",
+    alert_id: str = "",
+) -> list[tuple]:
+    icon = TOPIC_ICON.get("mail", "✉️")
+    blocks: list[tuple] = [
+        ("header", icon, subject, "Nowy mail"),
+        ("divider",),
+        ("space",),
+        ("field", "Od", sender, "plain"),
+    ]
+    if deadline:
+        blocks.append(("field", "Termin", deadline))
+    if summary:
+        blocks += [("space",), ("text", summary)]
+    if action:
+        blocks += [("space",), ("note", action)]
+    foot = f"✉️ {_clock()}" + (f"  ·  {alert_id}" if alert_id else "")
+    blocks.append(("footer", foot))
+    return blocks
+
+
+# ---------------------------------------------------------------------------
+# PRZEPIS 5: decision — decyzja do podjecia (realny ksztalt sejf M00013)
+#   sprawa, na czym konflikt, opcje (kazda: nazwa + plusy + minusy),
+#   rekomendacja, jak odpowiedziec. Wspiera maskowanie (pelne dane po 2FA).
+# ---------------------------------------------------------------------------
+def recipe_decision(
+    title: str,
+    context: str,
+    options: list[dict],
+    recommendation: str | None = None,
+    how_to_answer: str | None = None,
+    severity: str = "warn",
+    badge: str | None = None,
+    alert_id: str = "",
+) -> list[tuple]:
+    """options: [{name, plus, minus}]  (plus/minus opcjonalne)"""
+    sev = (severity or "warn").lower()
+    icon = SEV_ICON.get(sev, "⚠️")
+    sub = "DECYZJA" + (f"  ·  {badge}" if badge else "")
+    blocks: list[tuple] = [
+        ("header", icon, title, sub),
+        ("divider",),
+        ("space",),
+        ("text", context),
+        ("space",),
+    ]
+    for idx, opt in enumerate(options, 1):
+        name = opt.get("name", f"Opcja {idx}")
+        blocks.append(("text", f"{b(str(idx) + ') ' + name)}"))
+        if opt.get("plus"):
+            blocks.append(("text", f"   + {opt['plus']}"))
+        if opt.get("minus"):
+            blocks.append(("text", f"   - {opt['minus']}"))
+    if recommendation:
+        blocks += [("space",), ("note", f"Rekomendacja: {recommendation}")]
+    if how_to_answer:
+        blocks.append(("text", how_to_answer))
+    foot = f"⏱ {_clock()}" + (f"  ·  {alert_id}" if alert_id else "")
+    blocks.append(("footer", foot))
+    return blocks
+
+
+# ---------------------------------------------------------------------------
 # REJESTR przepisow: typ powiadomienia -> funkcja przepisu
 # ---------------------------------------------------------------------------
 RECIPES: dict[str, Callable[..., list[tuple]]] = {
-    "alert":   recipe_alert,
-    "digest":  recipe_digest,
-    "status":  recipe_status,
+    "alert":    recipe_alert,
+    "digest":   recipe_digest,
+    "status":   recipe_status,
+    "mail":     recipe_mail,
+    "decision": recipe_decision,
 }
 
 

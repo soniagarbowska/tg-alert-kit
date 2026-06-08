@@ -22,14 +22,21 @@ n = notify("alert",
 ```
 Wysylka (agent): message(action=send, target=..., message=n["text"], presentation=n["presentation"]).
 
-## Gotowe przepisy (recipe)
+## Gotowe przepisy (recipe) — dopasowane do REALNYCH typow systemu
 
-- **alert**  — pojedynczy alert klucz:wartosc (sec, sejf, gate, brama).
+(Inwentaryzacja prawdziwych komunikatow: INWENTARYZACJA.md)
+
+- **mail** — nowy mail (mail_watcher/wiki_mail). Realny: nadawca, temat, streszczenie,
+  AKCJA, termin. Args: sender, subject, summary, action, deadline, severity, alert_id.
+- **decision** — decyzja (sejf: konflikt danych CRM). Realny: opcje NOWY/STARY +/-,
+  rekomendacja, 2FA. Args: title, context, options[{name,plus,minus}], recommendation,
+  how_to_answer, severity, badge, alert_id.
+- **alert** — pojedynczy alert klucz:wartosc (sec incydent, tech awaria).
   Args: title, fields[(k,v)], severity, badge, note, alert_id.
-- **digest** — podsumowanie wielu pozycji (poczta, lista). DOKLADNIE wzor #439.
-  Args: title, items[{color,name,tag,fields,note,spoiler}], subtitle, footer, topic.
-- **status** — krotka zmiana stanu (monitor up/down, przywrocono).
+- **status** — krotka zmiana stanu / przeglad OK (sec przeglad, monitor up).
   Args: title, state_word, severity, fields, note, alert_id.
+- **digest** — lista pozycji (poczta zbiorczo, wiki sprzecznosci, crm audyt, seo okazje).
+  Args: title, items[{color,name,tag,fields,note,spoiler}], subtitle, footer, topic.
 
 ## Wagi (kolor/ikona, BMP-safe)
 critical -> ⛔ | warn -> ⚠️ | info -> ℹ️ | ok/resolved -> ✅
