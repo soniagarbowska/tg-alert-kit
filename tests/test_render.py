@@ -53,7 +53,7 @@ class TestRenderAlert:
 
     def test_severity_icon_critical(self):
         a = render_alert("M00001", "sec", "Alert", [], "critical")
-        assert "🔥" in a["text"]
+        assert "⛔" in a["text"]  # BMP emoji, NIE 🔥 (non-BMP psuje bold offset w Telegramie)
 
     def test_severity_icon_resolved(self):
         a = render_alert("M00001", "sec", "Alert", [], "resolved")

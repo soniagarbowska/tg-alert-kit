@@ -9,14 +9,19 @@ Zero wymyslania kolorow tla — to tylko znaki w tekscie.
 from __future__ import annotations
 
 # Stan alertu — dokladnie jak alertmanager-bot
+# UWAGA: emoji spoza BMP (np. 🔥 U+1F525) powoduja przesuniecie pogrubien
+# o 1 znak w Telegramie (UTF-16 surrogate pair = 2 jednostki, Python liczy 1).
+# Uzywamy WYLACZNIE emoji z zakresu BMP (U+0000-U+FFFF).
+# Zweryfikowane telethoniem 2026-06-08: ⛔ ⚠️ ℹ️ ✅ — pogrubienia idealne.
+
 STATE = {
-    "firing":   "🔥",   # aktywny problem
+    "firing":   "⛔",   # aktywny problem (BMP: U+26D4)
     "resolved": "✅",   # rozwiazane / przywrocone
 }
 
 # Waga (gdy chcemy rozroznic) — minimalne rozszerzenie
 SEVERITY = {
-    "critical": "🔥",   # jak firing — najwyzszy
+    "critical": "⛔",   # U+26D4 BMP — NIE 🔥 (non-BMP psuje bold offset)
     "warn":     "⚠️",
     "warning":  "⚠️",
     "info":     "ℹ️",
