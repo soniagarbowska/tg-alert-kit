@@ -57,20 +57,31 @@ def main(argv=None):
         items = pending()
         out = []
         for rec in items:
-            # styl #439 (notify/alert) zamiast starego render_alert
-            n = notify(
-                "alert",
-                title=rec["title"],
-                fields=[tuple(f) for f in rec.get("fields", [])],
-                severity=rec.get("severity", "warn"),
-                note=rec.get("note"),
-                badge=rec.get("badge"),
-                buttons_for=rec["type"],
-                alert_id=rec["id"],
-            )
+            if rec.get("recipe") and rec["recipe"] != "alert":
+                # nowy format: dowolny recipe + payload (proposal/decision/mail/...)
+                payload = dict(rec.get("payload", {}))
+                n = notify(
+                    rec["recipe"],
+                    severity=rec.get("severity", "warn"),
+                    buttons_for=rec.get("buttons_for") or rec.get("type"),
+                    alert_id=rec["id"],
+                    **payload,
+                )
+            else:
+                # stary format: alert klucz:wartosc (styl #439)
+                n = notify(
+                    "alert",
+                    title=rec["title"],
+                    fields=[tuple(f) for f in rec.get("fields", [])],
+                    severity=rec.get("severity", "warn"),
+                    note=rec.get("note"),
+                    badge=rec.get("badge"),
+                    buttons_for=rec.get("type"),
+                    alert_id=rec["id"],
+                )
             out.append({
                 "id": rec["id"],
-                "type": rec["type"],
+                "type": rec.get("type"),
                 "enqueued": rec.get("enqueued"),
                 "presentation": n["presentation"],
                 "text": n["text"],

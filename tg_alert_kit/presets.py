@@ -213,6 +213,9 @@ def recipe_proposal(
     kind: str | None = None,      # "Nowy skill" / "Rozwiniecie"
     priority: str | None = None,  # H/M/L
     evidence: str | None = None,
+    value: str | None = None,     # co to da / dlaczego warto (lepszy argument)
+    scope: str | None = None,     # zakres: co konkretnie wchodzi (punkty)
+    themes: list | None = None,   # zgrupowane watki/tematy zrodlowe
     index: str | None = None,     # np. "2 z 6"
     alert_id: str = "",
 ) -> list[tuple]:
@@ -234,9 +237,15 @@ def recipe_proposal(
     if priority:
         pw = _PRIO_WORD.get(priority.strip().lower(), priority)
         meta.append(("field", "Priorytet", pw, "plain"))
+    if themes:
+        meta.append(("field", "Tematy", str(len(themes)) + " zgrupowane", "plain"))
     if meta:
         blocks += meta
     blocks += [("section", "Co ma robic"), ("text", what)]
+    if scope:
+        blocks += [("section", "Zakres"), ("text", scope)]
+    if value:
+        blocks += [("section", "Co to da"), ("text", value)]
     if evidence:
         blocks += [("section", "Z czego wynika"), ("note", evidence)]
     foot = f"⏱ {_clock()}" + (f"  ·  {alert_id}" if alert_id else "")

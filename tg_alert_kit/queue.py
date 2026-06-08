@@ -40,6 +40,30 @@ def enqueue(alert_id: str, alert_type: str, title: str,
     return rec
 
 
+def enqueue_payload(alert_id: str, recipe: str, *, buttons_for: str | None = None,
+                    severity: str = "warn", payload: dict | None = None) -> dict:
+    """Dopisuje DOWOLNY recipe do kolejki (nie tylko 'alert').
+
+    payload = kwargs przepisu (np. dla 'proposal': name/what/agent/... ; dla
+    'decision': title/context/options/...). Dispatcher renderuje przez notify(recipe,
+    **payload) -> osobna ladna karta z kontekstowymi przyciskami.
+    """
+    rec = {
+        "id": alert_id,
+        "recipe": recipe,
+        "type": buttons_for or recipe,
+        "buttons_for": buttons_for,
+        "severity": severity,
+        "payload": payload or {},
+        "ts": int(time.time()),
+        "enqueued": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+    QUEUE.parent.mkdir(parents=True, exist_ok=True)
+    with open(QUEUE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return rec
+
+
 def _sent_ids() -> set:
     if not SENT.exists():
         return set()
