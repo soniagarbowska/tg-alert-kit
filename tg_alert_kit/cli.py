@@ -15,7 +15,7 @@ import json
 import sys
 
 from .queue import enqueue, pending, mark_sent
-from .render import render_alert
+from .notify import notify
 
 
 def _parse_fields(items):
@@ -57,17 +57,23 @@ def main(argv=None):
         items = pending()
         out = []
         for rec in items:
-            a = render_alert(
-                rec["id"], rec["type"], rec["title"],
-                [tuple(f) for f in rec.get("fields", [])],
-                rec.get("severity", "warn"), rec.get("note"),
+            # styl #439 (notify/alert) zamiast starego render_alert
+            n = notify(
+                "alert",
+                title=rec["title"],
+                fields=[tuple(f) for f in rec.get("fields", [])],
+                severity=rec.get("severity", "warn"),
+                note=rec.get("note"),
+                badge=rec.get("badge"),
+                buttons_for=rec["type"],
+                alert_id=rec["id"],
             )
             out.append({
                 "id": rec["id"],
                 "type": rec["type"],
                 "enqueued": rec.get("enqueued"),
-                "presentation": a["presentation"],
-                "text": a["text"],
+                "presentation": n["presentation"],
+                "text": n["text"],
             })
         print(json.dumps(out, ensure_ascii=False, indent=2))
         return 0

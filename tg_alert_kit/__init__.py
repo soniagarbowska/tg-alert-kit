@@ -15,21 +15,27 @@ Przyciski jako KOMENDY po polsku (potwierdzone ze dziala). Zero ACK, zero zargon
     )
     # a["presentation"] -> wysylasz przez narzedzie message (z przyciskami)
 """
+from .notify import notify
+from .presets import render_recipe, RECIPES, recipe_alert, recipe_digest, recipe_status
+from .text_alert import compose, b, m, i, SEV_ICON, SEV_WORD, DOT
 from .render import render_alert
 from .buttons import build_buttons, parse_command
 from .icons import state_icon, severity_icon
 from .card import card_png, card_html
 from .atom import build_alert, PRESETS, preset
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __all__ = [
-    # ATOM — glowne API (karta-obrazek + przyciski dla wielu typow)
-    "build_alert", "PRESETS", "preset",
-    # karta-obrazek (wzor #457)
-    "card_png", "card_html",
+    # GLOWNE API — styl tekstowy #439, adaptowalny
+    "notify",
+    # przepisy (rozne uklady, jeden styl)
+    "render_recipe", "RECIPES", "recipe_alert", "recipe_digest", "recipe_status",
+    # klocki + helpery stylu
+    "compose", "b", "m", "i", "SEV_ICON", "SEV_WORD", "DOT",
     # przyciski-komendy
     "build_buttons", "parse_command",
-    # tekstowy render (legacy/fallback)
-    "render_alert",
-    "state_icon", "severity_icon",
+    # karta-obrazek (wariant alternatywny)
+    "build_alert", "card_png", "card_html", "PRESETS", "preset",
+    # legacy
+    "render_alert", "state_icon", "severity_icon",
 ]
