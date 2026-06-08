@@ -18,6 +18,18 @@ Przyciski jako KOMENDY po polsku (potwierdzone ze dziala). Zero ACK, zero zargon
 from .render import render_alert
 from .buttons import build_buttons, parse_command
 from .icons import state_icon, severity_icon
+from .card import card_png, card_html
+from .atom import build_alert, PRESETS, preset
 
-__version__ = "0.2.0"
-__all__ = ["render_alert", "build_buttons", "parse_command", "state_icon", "severity_icon"]
+__version__ = "0.3.0"
+__all__ = [
+    # ATOM — glowne API (karta-obrazek + przyciski dla wielu typow)
+    "build_alert", "PRESETS", "preset",
+    # karta-obrazek (wzor #457)
+    "card_png", "card_html",
+    # przyciski-komendy
+    "build_buttons", "parse_command",
+    # tekstowy render (legacy/fallback)
+    "render_alert",
+    "state_icon", "severity_icon",
+]
