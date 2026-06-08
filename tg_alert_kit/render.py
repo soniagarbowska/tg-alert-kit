@@ -17,6 +17,7 @@ Output:
     }
 """
 from __future__ import annotations
+import time as _time
 from typing import Any
 
 from .icons import state_icon, severity_icon, BULLET
@@ -32,6 +33,26 @@ _TONE = {
     "ok":       "success",
     "resolved": "success",
 }
+
+# Slowo wagi w naglowku (jak STATUS w Grafana/alertmanager, po polsku)
+_SEV_LABEL = {
+    "critical": "KRYTYCZNE",
+    "firing":   "KRYTYCZNE",
+    "warn":     "UWAGA",
+    "warning":  "UWAGA",
+    "info":     "INFORMACJA",
+    "ok":       "OK",
+    "resolved": "ROZWIAZANE",
+}
+
+# Pola ktore warto pokazac monospace (dane techniczne) — heurystyka po nazwie klucza
+_MONO_KEYS = ("ip", "adres", "host", "port", "login", "uzytkownik", "user",
+              "plik", "sciezka", "path", "url", "domena", "hash", "id")
+
+
+def _is_mono(key: str) -> bool:
+    k = (key or "").lower()
+    return any(tok in k for tok in _MONO_KEYS)
 
 
 def render_alert(
@@ -55,18 +76,29 @@ def render_alert(
     sev = (severity or "warn").lower()
     tone = _TONE.get(sev, "warning")
     icon = severity_icon(sev)
+    sev_label = _SEV_LABEL.get(sev, "UWAGA")
+    when = _time.strftime("%H:%M")
 
-    # Naglowek jak alertmanager-bot: ICON **tytul** (pogrubiony)
-    # Markdown ** dziala na naszym kanale (zweryfikowane 2026-06-08).
+    # Layout wzorowany na Grafana/alertmanager-bot:
+    #   ICON **TYTUL**
+    #   waga - data techniczna w naglowku
+    #   (pusta linia)
+    #   pola: bullet **Klucz:** wartosc  (dane techniczne w `monospace`)
+    #   (pusta) > uwaga jako cytat
+    #   (pusta) stopka: zegar + ID
+    # Tylko emoji/znaki BMP (non-BMP psuje offsety pogrubien).
     lines = [f"{icon}  **{title}**"]
-    lines.append("")
+    lines.append(f"{sev_label}")
+    if fields:
+        lines.append("")
     for key, val in (fields or []):
-        lines.append(f"{BULLET} **{key}:** {val}")
+        shown = f"`{val}`" if _is_mono(key) else val
+        lines.append(f"{BULLET} **{key}:** {shown}")
     if note:
         lines.append("")
-        lines.append(note)
+        lines.append(f"> {note}")
     lines.append("")
-    lines.append(alert_id)
+    lines.append(f"⏱ {when}  ·  {alert_id}")
     text = "\n".join(lines)
 
     blocks: list[dict] = [{"type": "text", "text": text}]
