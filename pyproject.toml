@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "tg-alert-kit"
+version = "0.1.0"
+description = "Telegram-first alert renderer — ikony, MarkdownV2 card style, dynamiczne przyciski inline per projekt."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Sonia Garbowska"}]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-cov"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
