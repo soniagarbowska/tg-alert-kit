@@ -75,10 +75,15 @@ TOPIC_ICON = {
 }
 
 # pola pokazywane monospace (dane techniczne / liczby)
-_MONO_HINT = ("ip", "adres", "host", "port", "login", "uzytkownik", "user",
-              "plik", "sciezka", "path", "url", "domena", "hash", "id",
-              "kwota", "cena", "saldo", "czynsz", "numer", "konto", "nip",
-              "tytul", "kod")
+# Etykieta sugeruje dane techniczne, ALE mono wlaczamy tylko gdy WARTOSC faktycznie
+# wyglada technicznie (cyfry/./:/@/slash) — zeby "Porty: bez zmian" nie szlo monospace.
+_MONO_HINT = ("ip", "adres ip", "host", "login", "uzytkownik", "user",
+              "plik", "sciezka", "path", "url", "domena", "hash",
+              "kwota", "cena", "saldo", "czynsz", "nr konta", "konto", "nip",
+              "iban", "telefon", "tel", "kod")
+
+import re as _re
+_TECH_VALUE = _re.compile(r"[\d]")  # wartosc techniczna = zawiera cyfre
 
 
 def b(x: Any) -> str:
@@ -96,9 +101,14 @@ def i(x: Any) -> str:
     return f"_{x}_"
 
 
-def _auto_mono(label: str) -> bool:
+def _auto_mono(label: str, value: Any = None) -> bool:
     k = (label or "").lower()
-    return any(tok in k for tok in _MONO_HINT)
+    if not any(tok in k for tok in _MONO_HINT):
+        return False
+    # mono tylko gdy wartosc wyglada technicznie (ma cyfre); proza zostaje zwykla
+    if value is None:
+        return True
+    return bool(_TECH_VALUE.search(str(value)))
 
 
 def _render_block(blk: tuple) -> list[str]:
@@ -119,7 +129,7 @@ def _render_block(blk: tuple) -> list[str]:
         label = blk[1]
         value = blk[2]
         mode = blk[3] if len(blk) > 3 else "auto"
-        mono = (mode == "mono") or (mode == "auto" and _auto_mono(label))
+        mono = (mode == "mono") or (mode == "auto" and _auto_mono(label, value))
         shown = m(value) if mono else value
         return [f"{BULLET} {b(str(label) + ':')} {shown}"]
 

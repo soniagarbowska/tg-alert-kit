@@ -106,6 +106,7 @@ def recipe_status(
     icon = SEV_ICON.get(sev, "ℹ️")
     blocks: list[tuple] = [
         ("header", icon, title, state_word),
+        ("divider",),
     ]
     if fields:
         blocks.append(("space",))
