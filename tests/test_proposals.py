@@ -51,7 +51,7 @@ def test_proposal_recipe_renders_sections():
                index="1 z 3", severity="warn", buttons_for="skille",
                alert_id="M00023.1")
     t = n["text"]
-    assert "**CO MA ROBIC**" in t
+    assert "**CO MA ROBIĆ**" in t
     assert "**Z CZEGO WYNIKA**" in t
     assert "propozycja 1 z 3" in t
     assert "wysoki" in t

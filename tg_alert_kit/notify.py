@@ -73,8 +73,11 @@ def notify(
     # 3) inaczej -> domyslny zestaw z whitelist danego typu
     blocks: list[dict] = []
     rows: list = []
+    # Przyciski domyslnie z nazwy recipe (buttons_for=None => uzyj recipe jako typ).
+    # Jawne buttons_for=False lub buttons_for="" wylaczy generacje przyciskow.
     btype = (buttons_for or recipe or "_default")
-    if buttons_for is not None:
+    _want_buttons = (buttons_for is not None) or bool(alert_id)
+    if _want_buttons:
         opts = kwargs.get("options")
         if recipe == "decision" and opts:
             # czy maskowanie faktycznie cos ukrylo? (znaczniki [DANE]/[KONTO]/...)

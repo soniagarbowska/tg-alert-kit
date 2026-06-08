@@ -89,6 +89,35 @@ def pending() -> list:
     return out
 
 
+def enqueue_each_mail(items: list, base_id: str, *, bot: str = "victor-estate") -> list[dict]:
+    """Wrzuca KAZDY mail jako osobna karte recipe_mail (osobny M-numer).
+
+    Uzywaj zamiast recipe_digest gdy maile wymagaja akcji per-sztuka —
+    Sonia moze zatwierdzic/odlozyc/odpisac KAZDY osobno.
+    items: [{sender, subject, summary, action, deadline, severity, alert_id, buttons_for}].
+    Digest (jeden zbiorczy) jest dobry tylko dla CZYSTO INFORMACYJNYCH rzeczy
+    (statystyki SEO, notatki wiki) gdzie "Dzieki" dotyczy calego bloku.
+    """
+    out = []
+    for it in items:
+        aid = it.get("alert_id") or base_id
+        payload = {
+            "sender": it.get("sender", ""),
+            "subject": it.get("subject", ""),
+            "summary": it.get("summary"),
+            "action": it.get("action"),
+            "deadline": it.get("deadline"),
+        }
+        rec = enqueue_payload(
+            aid, "mail",
+            buttons_for=it.get("buttons_for", "mail"),
+            severity=it.get("severity", "info"),
+            payload=payload,
+        )
+        out.append(rec)
+    return out
+
+
 def mark_sent(alert_id: str) -> None:
     """Oznacza alert jako wyslany (wola agent po udanej wysylce)."""
     SENT.parent.mkdir(parents=True, exist_ok=True)

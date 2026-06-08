@@ -191,7 +191,7 @@ def recipe_decision(
     if recommendation:
         blocks += [("section", "Rekomendacja"), ("note", recommendation)]
     if how_to_answer:
-        blocks += [("section", "Jak odpowiedziec"), ("text", how_to_answer)]
+        blocks += [("section", "Jak odpowiedzieć"), ("text", how_to_answer)]
     foot = f"⏱ {_clock()}" + (f"  ·  {alert_id}" if alert_id else "")
     blocks.append(("footer", foot))
     return blocks
@@ -242,7 +242,7 @@ def recipe_proposal(
         meta.append(("field", "Tematy", str(len(themes)) + " zgrupowane", "plain"))
     if meta:
         blocks += meta
-    blocks += [("section", "Co ma robic"), ("text", what)]
+    blocks += [("section", "Co ma robić"), ("text", what)]
     if scope:
         blocks += [("section", "Zakres"), ("text", scope)]
     if value:
