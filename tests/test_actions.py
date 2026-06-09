@@ -81,5 +81,5 @@ def test_sec_alert_contextual_default():
                fields=[("IP", "1.2.3.4")], severity="warn",
                buttons_for="sec", alert_id="M00018")
     labels = _labels(n["buttons"])
-    assert "To bylam ja" in labels
-    assert "Zablokuj adres" in labels
+    assert "✅ To byłam ja" in labels
+    assert any("Zablokuj adres" in l for l in labels)

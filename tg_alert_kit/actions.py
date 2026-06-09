@@ -27,29 +27,35 @@ import re
 # label moze miec {param} do wypelnienia (np. numer opcji, data).
 # cmd to wzor komendy; {id} = alert_id, {param} = parametr akcji.
 # ---------------------------------------------------------------------------
+# Telegram inline-buttony NIE maja kolorow (style success/primary jest tylko
+# wskazowka dla innych kanalow). Jedyne wizualne rozroznienie na TG to EMOJI w
+# labelce — dlatego kazda akcja ma emoji-prefiks (zielone/czerwone/neutralne sie
+# nie zlewaja). Labelki z polskimi literami. (uzgodnione z Sonia 2026-06-09)
 CATALOG: dict[str, dict[str, Any]] = {
     # --- uniwersalne ---
-    "pozniej":     {"label": "Przypomnij pozniej", "cmd": "/alert_pozniej {id}",    "style": "secondary"},
-    "zalatwione":  {"label": "Zalatwione",          "cmd": "/alert_zalatwione {id}", "style": "success"},
-    "odrzuc":      {"label": "Odrzuc",              "cmd": "/alert_odrzuc {id}",     "style": "secondary"},
+    "pozniej":     {"label": "⏰ Później",            "cmd": "/alert_pozniej {id}",    "style": "secondary"},
+    "zalatwione":  {"label": "✅ Załatwione",          "cmd": "/alert_zalatwione {id}", "style": "success"},
+    "odrzuc":      {"label": "✖️ Odrzuć",             "cmd": "/alert_odrzuc {id}",     "style": "secondary"},
     # --- bezpieczenstwo (sec/tech) ---
-    "to_ja":       {"label": "To bylam ja",         "cmd": "/alert_toja {id}",       "style": "success"},
-    "nie_ja":      {"label": "To nie ja — zbadaj",  "cmd": "/alert_nieja {id}",      "style": "danger"},
-    "zablokuj":    {"label": "Zablokuj adres",      "cmd": "/alert_zablokuj {id}",   "style": "danger"},
+    "to_ja":       {"label": "✅ To byłam ja",         "cmd": "/alert_toja {id}",       "style": "success"},
+    "nie_ja":      {"label": "🔴 To nie ja — zbadaj",  "cmd": "/alert_nieja {id}",      "style": "danger"},
+    "zablokuj":    {"label": "⛔ Zablokuj adres",      "cmd": "/alert_zablokuj {id}",   "style": "danger"},
     # --- decyzja (sejf) — przyciski z opcji buduje builder, te sa pomocnicze ---
-    "wybierz":     {"label": "{param}",             "cmd": "/alert_wybierz {id} {param_key}", "style": "primary"},
-    "pokaz":       {"label": "Pokaz pelne (2FA)",   "cmd": "/alert_pokaz {id}",      "style": "secondary"},
+    "wybierz":     {"label": "{param}",              "cmd": "/alert_wybierz {id} {param_key}", "style": "primary"},
+    "pokaz":       {"label": "🔓 Pokaż pełne (2FA)",   "cmd": "/alert_pokaz {id}",      "style": "secondary"},
     # --- mail ---
-    "zaplacone":   {"label": "Oznacz zaplacone",    "cmd": "/alert_zaplacone {id}",  "style": "success"},
-    "nie_nasze":   {"label": "To nie nasze",        "cmd": "/alert_nie_nasze {id}",  "style": "secondary"},
-    "odpisz":      {"label": "Przygotuj odpowiedz", "cmd": "/alert_odpisz {id}",     "style": "primary"},
+    "zaplacone":   {"label": "💰 Oznacz zapłacone",    "cmd": "/alert_zaplacone {id}",  "style": "success"},
+    "nie_nasze":   {"label": "↪️ To nie nasze",       "cmd": "/alert_nie_nasze {id}",  "style": "secondary"},
+    "odpisz":      {"label": "✍️ Przygotuj odpowiedź", "cmd": "/alert_odpisz {id}",     "style": "primary"},
     # --- wiki/crm (sprzecznosci) ---
-    "zostaw_nowe": {"label": "Zostaw nowe",         "cmd": "/alert_zostaw_nowe {id}", "style": "primary"},
-    "zostaw_stare":{"label": "Zostaw stare",        "cmd": "/alert_zostaw_stare {id}","style": "secondary"},
-    "scal":        {"label": "Scal",                "cmd": "/alert_scal {id}",       "style": "primary"},
+    "zostaw_nowe": {"label": "🆕 Zostaw nowe",         "cmd": "/alert_zostaw_nowe {id}", "style": "primary"},
+    "zostaw_stare":{"label": "📜 Zostaw stare",        "cmd": "/alert_zostaw_stare {id}","style": "secondary"},
+    "scal":        {"label": "🔗 Scal",                "cmd": "/alert_scal {id}",       "style": "primary"},
     # --- skille (propozycje skill_proposer) ---
-    "buduj":       {"label": "Buduj ten skill",     "cmd": "/alert_buduj {id}",      "style": "primary"},
-    "nie_teraz":   {"label": "Nie teraz",           "cmd": "/alert_nie_teraz {id}",  "style": "secondary"},
+    "buduj":       {"label": "🔨 Buduj ten skill",     "cmd": "/alert_buduj {id}",      "style": "primary"},
+    "nie_teraz":   {"label": "⏸️ Nie teraz",          "cmd": "/alert_nie_teraz {id}",  "style": "secondary"},
+    # --- dokumenty / radar ---
+    "przejrzyj":   {"label": "👀 Przejrzyj",           "cmd": "/alert_przejrzyj {id}",  "style": "primary"},
 }
 
 # DOZWOLONE akcje per typ (whitelist). LLM moze wybierac TYLKO z tej listy.
@@ -65,6 +71,10 @@ ALLOWED: dict[str, list[str]] = {
     "seo":            ["zalatwione", "pozniej"],
     "skille":         ["buduj", "nie_teraz", "odrzuc"],
     "proposal":       ["buduj", "nie_teraz", "odrzuc"],
+    "dokumenty":      ["przejrzyj", "pozniej", "zalatwione"],
+    "zadanie":        ["zalatwione", "pozniej"],
+    "info":           ["zalatwione", "pozniej"],
+    "info-digest":    ["zalatwione", "pozniej"],
     "_default":       ["pozniej", "zalatwione"],
 }
 

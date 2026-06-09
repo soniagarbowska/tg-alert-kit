@@ -44,7 +44,7 @@ def test_notify_alert():
     assert "**Logowanie**" in n["text"]
     assert n["tone"] == "danger"
     labels = [b["label"] for r in n["buttons"] for b in r]
-    assert "To bylam ja" in labels
+    assert "✅ To byłam ja" in labels
 
 
 def test_notify_digest_matches_439_structure():

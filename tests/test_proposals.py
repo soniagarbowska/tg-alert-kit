@@ -57,8 +57,8 @@ def test_proposal_recipe_renders_sections():
     assert "wysoki" in t
     # kontekstowe przyciski skilli
     labels = [b["label"] for r in n["buttons"] for b in r]
-    assert "Buduj ten skill" in labels
-    assert "Odrzuc" in labels
+    assert any("Buduj ten skill" in l for l in labels)
+    assert any("Odrzu" in l for l in labels)
 
 
 def test_proposal_priority_maps_severity():

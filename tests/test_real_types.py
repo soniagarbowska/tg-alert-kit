@@ -19,7 +19,7 @@ def test_mail_faktura_play():
     assert "Play - e-faktura" in t
     assert "**Od:**" in t and "awizo@mojefinanseplay.pl" in t
     assert "> Oplacic do 22.06.2026" in t        # akcja jako cytat
-    assert "Zalatwione" in [b["label"] for r in n["buttons"] for b in r]
+    assert any("Załatwione" in b["label"] for r in n["buttons"] for b in r)
 
 
 def test_decision_sejf_konflikt_telefonu():
@@ -68,7 +68,7 @@ def test_sec_incydent_jako_alert():
     t = n["text"]
     assert "Nieudane proby logowania SSH" in t
     assert "`193.41.206.12`" in t                 # IP mono
-    assert "To bylam ja" in [b["label"] for r in n["buttons"] for b in r]
+    assert any("To byłam ja" in b["label"] for r in n["buttons"] for b in r)
 
 
 def test_tech_awaria_critical():

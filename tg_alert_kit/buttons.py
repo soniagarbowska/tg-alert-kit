@@ -21,11 +21,12 @@ from typing import Any
 
 
 # Etykieta -> (tekst na przycisku, komenda, styl)
+# Emoji-prefiks bo Telegram nie koloruje inline-buttonow (style zlewa sie wizualnie).
 _ACTIONS = {
-    "to_ja":      ("To bylam ja",       "/alert_toja",       "success"),
-    "nie_ja":     ("To nie ja",         "/alert_nieja",      "danger"),
-    "pozniej":    ("Odloz na pozniej",  "/alert_pozniej",    "secondary"),
-    "zalatwione": ("Zalatwione",        "/alert_zalatwione", "success"),
+    "to_ja":      ("✅ To byłam ja",     "/alert_toja",       "success"),
+    "nie_ja":     ("🔴 To nie ja",       "/alert_nieja",      "danger"),
+    "pozniej":    ("⏰ Później",          "/alert_pozniej",    "secondary"),
+    "zalatwione": ("✅ Załatwione",        "/alert_zalatwione", "success"),
 }
 
 # Zestawy per typ alertu — tylko REALNE akcje miedzy Sonia a Hugo
